@@ -12,9 +12,9 @@ def main():
     print(config_data)
 
     # read in embeddings, annotations, and GO
-    test_embeddings = fu.read_embeddings(config_data['targets'])
+    test_embeddings = fu.read_target_embeddings(config_data['target_ids'], config_data['targets'])
     embeddings = fu.read_embeddings(config_data['lookup_set'])
-
+    
     go = GeneOntology(config_data['go'])
     go_annotations = fu.read_go_annotations(config_data['annotations'])
 

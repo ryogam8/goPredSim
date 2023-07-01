@@ -9,7 +9,7 @@ class EmbeddingLookup(object):
         self.embedding_db = dict()
 
         for e in embedding_db.keys():
-            embedding = embedding_db[e][0]
+            embedding = embedding_db[e]
             self.embedding_db[e] = embedding
 
         # prepare data
@@ -30,10 +30,10 @@ class EmbeddingLookup(object):
                 raw_data_query = querys
                 query_ids = range(0, numpy.shape(querys)[0])
             
-            raw_data_query = numpy.array(raw_data_query).squeeze()
-            if len(query_ids) == 1:
-                raw_data_query = raw_data_query.reshape(1, -1)
-
+            raw_data_query = numpy.array(raw_data_query)
+            print(raw_data_query.shape)
+            # if len(query_ids) == 1:
+            # raw_data_query = raw_data_query.reshape(-1, 1)
             distances = pairwise_distances(raw_data_query, self.raw_data, metric=metric)
         else:
             sys.exit("{} is not a correct distance metric\n"
