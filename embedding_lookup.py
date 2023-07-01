@@ -35,6 +35,7 @@ class EmbeddingLookup(object):
             # if len(query_ids) == 1:
             # raw_data_query = raw_data_query.reshape(-1, 1)
             distances = pairwise_distances(raw_data_query, self.raw_data, metric=metric)
+            print(f'distances shape: {distances.shape}')
         else:
             sys.exit("{} is not a correct distance metric\n"
                      "See <sklearn.metrics.pairwise.distance_metrics()> "
