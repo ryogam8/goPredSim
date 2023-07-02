@@ -3,7 +3,7 @@ import file_utils as fu
 from gene_ontology import GeneOntology
 from function_prediction import FunctionPrediction
 from pathlib import Path
-
+from tqdm import tqdm
 
 def main():
     # read in information
@@ -12,8 +12,7 @@ def main():
     print(config_data)
 
     # read in embeddings, annotations, and GO
-    test_embeddings = fu.read_target_embeddings(config_data['target_ids'], config_data['targets'])
-    embeddings = fu.read_embeddings(config_data['lookup_set'])
+    embeddings = fu.read_target_embeddings(config_data['lookup_ids'], config_data['lookup_targets'])
     
     go = GeneOntology(config_data['go'])
     go_annotations = fu.read_go_annotations(config_data['annotations'])
@@ -23,22 +22,26 @@ def main():
         ontologies = ['bpo', 'mfo', 'cco']
     else:
         ontologies = [config_data['onto']]
-        
+    
     # set dist cutoffs:
     cutoffs = config_data['thresh']
     dist_cutoffs = cutoffs.split(',')
 
-    # perform prediction for each ontology individually
-    for o in ontologies:
-        predictor = FunctionPrediction(embeddings, go_annotations, go, o)
-        predictions_all, _ = predictor.run_prediction_embedding_all(test_embeddings, 'euclidean', dist_cutoffs,
-                                                                    config_data['modus'])
+    test_embeddings = fu.read_target_embeddings(config_data['target_ids'], config_data['targets'])
+    for i in tqdm(range(0, len(test_embeddings), 2000)):
+        batch_embeddings = dict(list(test_embeddings.items())[i:i+2000])  # 1000要素ずつのバッチを取得
 
-        # write predictions for each distance cutoff
-        for dist in predictions_all.keys():
-            predictions = predictions_all[dist]
-            predictions_out = '{}_{}_{}.txt'.format(config_data['output'], dist, o)
-            FunctionPrediction.write_predictions(predictions, predictions_out)
+        # perform prediction for each ontology individually
+        for o in ontologies:
+            predictor = FunctionPrediction(embeddings, go_annotations, go, o)
+            predictions_all, _ = predictor.run_prediction_embedding_all(batch_embeddings, 'cosine', dist_cutoffs,
+                                                                        config_data['modus'])
+
+            # write predictions for each distance cutoff
+            for dist in predictions_all.keys():
+                predictions = predictions_all[dist]
+                predictions_out = '{}_{}_{}_{}.txt'.format(config_data['output'], dist, o, 'cosine')
+                FunctionPrediction.write_predictions(predictions, predictions_out)
 
             # for compatibility with CAFA assessment tool use the following lines
             # team_name = RandomTeam
