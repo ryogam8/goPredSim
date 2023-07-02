@@ -5,14 +5,13 @@ import sys
 
 
 class FunctionPrediction(object):
-
     def __init__(self, embedding_db, go_db, go, go_type):
         self.go = go
 
-        if go_type == 'all':
+        if go_type == "all":
             self.lookup_db = EmbeddingLookup(embedding_db)
             self.go_db = go_db
-        elif go_type == 'mfo' or go_type == 'bpo' or go_type == 'cco':
+        elif go_type == "mfo" or go_type == "bpo" or go_type == "cco":
             # only use proteins in the annotation set which actually have an annotation in this ontology
             self.go_db = defaultdict(set)
             embedding_db_reduced = dict()
@@ -24,14 +23,16 @@ class FunctionPrediction(object):
                     self.go_db[k] = go_terms
             self.lookup_db = EmbeddingLookup(embedding_db_reduced)
         else:
-            sys.exit("{} is not a valid GO. Valid GOs are [all|mfo|bpo|cco]".format(go_type))
+            sys.exit(
+                "{} is not a valid GO. Valid GOs are [all|mfo|bpo|cco]".format(go_type)
+            )
 
     def get_terms_by_go(self, terms):
-        terms_by_go = {'mfo': set(), 'bpo': set(), 'cco': set()}
+        terms_by_go = {"mfo": set(), "bpo": set(), "cco": set()}
 
         for t in terms:
             onto = self.go.get_ontology(t)
-            if onto != '':
+            if onto != "":
                 terms_by_go[onto].add(t)
 
         return terms_by_go
@@ -43,23 +44,25 @@ class FunctionPrediction(object):
         :param distance: distance measure to use [euclidean|cosine]
         :param hits: hits to include (either by distance or by number as defined with criterion)
         :param criterion: should k closest hits or all hits with distance <k be included?
-        :return: 
+        :return:
         """
 
         predictions = defaultdict(defaultdict)
         hit_ids = defaultdict(defaultdict)
 
-        distances, query_ids = self.lookup_db.run_embedding_lookup_distance(querys, distance)
+        distances, query_ids = self.lookup_db.run_embedding_lookup_distance(
+            querys, distance
+        )
 
         for i in range(0, len(query_ids)):
             query = query_ids[i].split()[0]
             dists = distances[i, :].squeeze()
             for h in hits:
                 prediction = dict()
-                if criterion == 'dist':  # extract hits within a certain distance
+                if criterion == "dist":  # extract hits within a certain distance
                     h = float(h)
                     indices = numpy.nonzero(dists <= h)
-                elif criterion == 'num':  # extract h closest hits
+                elif criterion == "num":  # extract h closest hits
                     h = int(h)
                     indices_tmp = numpy.argpartition(dists, h)[0:h]
                     dists_tmp = [dists[i] for i in indices_tmp]
@@ -67,10 +70,16 @@ class FunctionPrediction(object):
                     indices = numpy.nonzero(dists <= max_dist)[0]
 
                     if len(indices) > h:
-                        print("Multiple hits with same distance found, resulting in {} hits".format(len(indices)))
+                        print(
+                            "Multiple hits with same distance found, resulting in {} hits".format(
+                                len(indices)
+                            )
+                        )
 
                 else:
-                    sys.exit("No valid criterion defined, valid criterions are [dist|num]")
+                    sys.exit(
+                        "No valid criterion defined, valid criterions are [dist|num]"
+                    )
 
                 num_hits = len(indices)
 
@@ -79,10 +88,10 @@ class FunctionPrediction(object):
                     go_terms = self.go_db[lookup_id]
                     dist = dists[ind]
 
-                    if distance == 'euclidean':
+                    if distance == "euclidean":
                         # scale distance to reflect a similarity [0;1]
                         dist = 0.5 / (0.5 + dist)
-                    elif distance == 'cosine':
+                    elif distance == "cosine":
                         dist = 1 - dist
 
                     for g in go_terms:
@@ -138,13 +147,15 @@ class FunctionPrediction(object):
         """
 
         prediction = dict()
-        distances, _ = self.lookup_db.run_embedding_lookup_distance(query_embedding, distance)
+        distances, _ = self.lookup_db.run_embedding_lookup_distance(
+            query_embedding, distance
+        )
         dists = distances[0, :].squeeze().numpy()
 
-        if criterion == 'dist':  # extract hits within a certain distance
+        if criterion == "dist":  # extract hits within a certain distance
             k = float(k)
             indices = numpy.nonzero(dists <= k)
-        elif criterion == 'num':  # extract h closest hits
+        elif criterion == "num":  # extract h closest hits
             k = int(k)
             indices_tmp = numpy.argpartition(dists, k)[0:k]
             dists_tmp = [dists[i] for i in indices_tmp]
@@ -160,10 +171,10 @@ class FunctionPrediction(object):
             go_terms = self.go_db[lookup_id]
             dist = dists[ind]
 
-            if distance == 'euclidean':
+            if distance == "euclidean":
                 # scale distance to reflect a similarity [0;1]
                 dist = 0.5 / (0.5 + dist)
-            elif distance == 'cosine':
+            elif distance == "cosine":
                 dist = 1 - dist
 
             for g in go_terms:
@@ -191,7 +202,7 @@ class FunctionPrediction(object):
                 for p in prediction.keys():
                     parents = self.go.get_parent_terms(p)
                     parent_terms += parents
-                    
+
                 # exclude terms that are parent terms, i.e. there are more specific terms also part of this prediction
                 keys_for_deletion = set()
                 for p in prediction.keys():
@@ -211,14 +222,14 @@ class FunctionPrediction(object):
         :param out_file: output file
         :return:
         """
-        with open(out_file, 'a') as out:
+        with open(out_file, "a") as out:
             for p in predictions.keys():
                 prediction = predictions[p]
                 for pred in prediction.keys():
                     ri = prediction[pred]
-                    out.write('{}\t{}\t'.format(p, pred))
-                    out.write('{:0.2f}\n'.format(float(ri)))
-                    
+                    out.write("{}\t{}\t".format(p, pred))
+                    out.write("{:0.2f}\n".format(float(ri)))
+
     @staticmethod
     def write_predictions_cafa(predictions, out_file, model_num, team_name):
         """
@@ -229,13 +240,15 @@ class FunctionPrediction(object):
         :param team_name: Team name to use in output file
         :return:
         """
-        with open(out_file, 'w') as out:
-            out.write('AUTHOR\t{}\nMODEL\t{}\nKEYWORDS\thomolog, machine learning, natural language processing.'
-                      '\n'.format(team_name, model_num))
+        with open(out_file, "w") as out:
+            out.write(
+                "AUTHOR\t{}\nMODEL\t{}\nKEYWORDS\thomolog, machine learning, natural language processing."
+                "\n".format(team_name, model_num)
+            )
             for p in predictions.keys():
                 prediction = predictions[p]
                 for pred in prediction.keys():
                     ri = prediction[pred]
-                    out.write('{}\t{}\t'.format(p, pred))
-                    out.write('{:0.2f}\n'.format(float(ri)))
-            out.write('END')
+                    out.write("{}\t{}\t".format(p, pred))
+                    out.write("{:0.2f}\n".format(float(ri)))
+            out.write("END")

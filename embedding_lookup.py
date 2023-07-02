@@ -4,7 +4,6 @@ import sys
 
 
 class EmbeddingLookup(object):
-
     def __init__(self, embedding_db):
         self.embedding_db = dict()
 
@@ -29,16 +28,18 @@ class EmbeddingLookup(object):
             else:
                 raw_data_query = querys
                 query_ids = range(0, numpy.shape(querys)[0])
-            
+
             raw_data_query = numpy.array(raw_data_query)
             print(raw_data_query.shape)
             # if len(query_ids) == 1:
             # raw_data_query = raw_data_query.reshape(-1, 1)
             distances = pairwise_distances(raw_data_query, self.raw_data, metric=metric)
-            print(f'distances shape: {distances.shape}')
+            print(f"distances shape: {distances.shape}")
         else:
-            sys.exit("{} is not a correct distance metric\n"
-                     "See <sklearn.metrics.pairwise.distance_metrics()> "
-                     "for all possible distance metrics".format(metric))
-            
+            sys.exit(
+                "{} is not a correct distance metric\n"
+                "See <sklearn.metrics.pairwise.distance_metrics()> "
+                "for all possible distance metrics".format(metric)
+            )
+
         return distances, query_ids
