@@ -211,7 +211,7 @@ class FunctionPrediction(object):
         :param out_file: output file
         :return:
         """
-        with open(out_file, 'w') as out:
+        with open(out_file, 'a') as out:
             for p in predictions.keys():
                 prediction = predictions[p]
                 for pred in prediction.keys():
